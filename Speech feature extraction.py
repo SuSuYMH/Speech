@@ -1,13 +1,12 @@
 import wave as wv
 import pylab as plt
 import numpy as np
-import scipy.signal as signal
-from scipy.fftpack import fft,ifft
+from scipy.fftpack import fft, idct
 
 
 def read_voice_signal():
     """从文件读取声音信号"""
-    wave_path = 'data/shan.wav'
+    wave_path = 'data/media1.wav'
     file = wv.open(wave_path, 'rb')
 
     # a = file.getparams().nframes  # 采样总数
@@ -140,7 +139,7 @@ def all_frames_fft(frames_afterwindows, num, f):
     # 对原频率取模为能量谱
     normalization_frames_afterabs = (np.abs(frames_afterfft))**2
     print(len(normalization_frames_afterabs))
-    normalization_half_frames_afterabs = normalization_frames_afterabs[:,range(int(num / 2))]  # 由于对称性，只取一半区间（单边频谱
+    normalization_half_frames_afterabs = normalization_frames_afterabs[:, range(int(num / 2))]  # 由于对称性，只取一半区间（单边频谱
     print(len(normalization_half_frames_afterabs))
     # 返回值各个是什么看上面注释，太不好描述了
     return frames_afterfft, timelist, normalization_half_frames_afterabs, half_timelist
@@ -171,7 +170,7 @@ def melfilter(half_frames_afterabs, nf, f):
     melscale_power_spectrum = np.dot(half_frames_afterabs[0:nf], fbank.T)
     # print(filter_banks.shape)
     # print(filter_banks)
-    # 不能算log(0),所以处理一下
+    # 不能计算log(0),所以处理一下
     melscale_power_spectrum = np.where(melscale_power_spectrum == 0, np.finfo(float).eps, melscale_power_spectrum)  # 数值稳定性
     # print(filter_banks)
     # 进行log处理
@@ -182,24 +181,77 @@ def melfilter(half_frames_afterabs, nf, f):
     return melscale_power_spectrum, nfilt
 
 
+def all_melframes_after_idct(melscale_power_spectrum, nf, nfilt):
+    melframes_afteridct = np.zeros((1, nfilt))
+    for i in melscale_power_spectrum:
+        i = idct(i)
+        # print(i)
+        i = np.expand_dims(i, axis=0)  # 升维，才能进行下一步的拼接
+        # 把每一步的出来的经过windows的frame作为新的一行添加到frames_afterwindows里
+        melframes_afteridct = np.concatenate([melscale_power_spectrum, i])
+    np.delete(melframes_afteridct, 0)
+    # 每一个滤波器得到的值再经过离散余弦变换之后对应一个系数，取前面n个，n一般取12
+    feature = 12
+    # 返回每一帧的feature和feature的维数
+    return melframes_afteridct[:, range(feature)], feature
+
+
+def order_difference(melframes_afteridct, dim_of_feature, times_of_order):
+    # 输入为系数、维数、要做几阶差分
+    zeros = np.zeros((dim_of_feature,))
+    # 最终mfcc特征
+    final_mfcc_feature = melframes_afteridct
+    # 当前得到的差分，先初始化为开始输入的系数
+    current_order = melframes_afteridct
+    for i in range(times_of_order):
+        print(current_order.shape)
+        current_order_unchanged = current_order
+        np.delete(current_order, range(2))
+        print(current_order.shape)
+        np.append(current_order, zeros)
+        print(current_order.shape)
+        np.append(current_order, zeros)
+        print(current_order.shape)
+        current_order = current_order_unchanged - current_order
+        final_mfcc_feature = np.append(final_mfcc_feature, current_order, axis=1)
+    return final_mfcc_feature.T, dim_of_feature*(times_of_order+1)
+
+
 def main():
-    num_of_testframe = 80
+    """读取数据"""
+    num_of_testframe = 10
     # 双声道数据，有数据的时间点，取样频率，取样个数
     wave_data, timelist, f, sum = read_voice_signal()
     print(f)
     # image_display()
+
+    '''加窗'''
     # 加窗后的数据，每帧的采样点个数，帧数
     frames_afterwindows, wlen, nf = windows(wave_data, timelist, f)
     # 对于每一frame来说的有数据的时间点
     timelist_time_frame = np.arange(0, wlen) * (1.0 / f)
     image_display(frames_afterwindows[num_of_testframe], timelist_time_frame)
+
+    '''fft'''
     # fft后的数据,及其平方并取前半个图的能量数据
     frames_afterfft, timelist, normalization_half_frames_afterabs, timelist_fre_frame = all_frames_fft(frames_afterwindows, wlen, f)
     # print(frames_afterfft[800])
     image_display(normalization_half_frames_afterabs[num_of_testframe], timelist_fre_frame)
+
+    '''mel滤波'''
     melscale_power_spectrum, nfilt = melfilter(normalization_half_frames_afterabs, wlen, f)
     # 高频的那部分降下去很正常，因为高频就没什么能量
     image_display(melscale_power_spectrum[num_of_testframe], np.arange(0, nfilt))
+
+    '''idct'''
+    melframes_afteridct, dim_of_feature = all_melframes_after_idct(melscale_power_spectrum, nf, nfilt)
+
+    '''difference差分'''
+    # 要进行几阶差分
+    times_of_order = 2
+    # 最后返回按列排的特征，及其维数
+    final_mfcc_feature, dim_of_final_feature = order_difference(melframes_afteridct, dim_of_feature, times_of_order)
+    print(final_mfcc_feature.shape)
 
 
 if __name__ == '__main__':
