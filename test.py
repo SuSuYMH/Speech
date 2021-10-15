@@ -16,11 +16,13 @@ def main():
     # fbank = np.zeros((24, int(np.floor(149 / 2 + 1))))
     # print(fbank.shape)
 
-    # n = np.array([1, 2])
+    wavedata = np.array([1, 2])
     # print(range(int(10 / 2)))
 
-    for i in range(2):
-        print(i)
+    new_wavedata = np.delete(wavedata, 0)
+    print(new_wavedata)
+    new_wavedata = np.append(wavedata, [0], axis=0)
+    print(new_wavedata)
 
     # n = np.array([complex(1, 2), complex(2, 3)])
     # m = np.abs(n)
