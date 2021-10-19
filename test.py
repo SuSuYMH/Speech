@@ -16,13 +16,17 @@ def main():
     # fbank = np.zeros((24, int(np.floor(149 / 2 + 1))))
     # print(fbank.shape)
 
-    wavedata = np.array([1, 2])
+    wavedata = np.array([[1, 2, 3, 4],[2, 2, 2, 2]])
+    print(wavedata)
+    print(wavedata.sum(axis = 1))
+    # num = wavedata[0].sum
+    # print(num)
     # print(range(int(10 / 2)))
 
-    new_wavedata = np.delete(wavedata, 0)
-    print(new_wavedata)
-    new_wavedata = np.append(wavedata, [0], axis=0)
-    print(new_wavedata)
+    # new_wavedata = np.delete(wavedata, 0)
+    # print(new_wavedata)
+    # new_wavedata = np.append(wavedata, [0], axis=0)
+    # print(new_wavedata)
 
     # n = np.array([complex(1, 2), complex(2, 3)])
     # m = np.abs(n)
@@ -124,29 +128,29 @@ def main():
     plt.xlabel("time (s)")
     plt.show()
 '''
-def windows(wavedata):
-    """分帧与加窗"""
-    # 帧长
-    wlen = 25
-    # 帧移
-    inc = 10
-    # 重叠部分
-    overlap = wlen - inc
-    # 算出frame的个数
-    signal_length = len(wavedata)
-    if signal_length <= wlen:  # 若信号长度小于一个帧的长度，则帧数定义为1
-        nf = 1
-    else:  # 否则，计算帧的总长度
-        nf = int(np.ceil((1.0 * signal_length - wlen + inc) / inc))
-    # 所有帧加起来总的铺平后的长度
-    pad_length = int((nf - 1) * inc + wlen)
-    # 不够的长度使用0填补，类似于FFT中的扩充数组操作
-    zeros = np.zeros((pad_length - signal_length,))
-    # 填补后的信号记为pad_signal
-    pad_signal = np.concatenate((wavedata, zeros))
-    # 相当于对所有帧的时间点进行抽取，得到nf*wlen长度的矩阵
-    indices = np.tile(np.arange(0, wlen), (nf, 1)) + np.tile(np.arange(0, nf * inc, inc), (wlen, 1)).T
-    print(indices)
+# def windows(wavedata):
+#     """分帧与加窗"""
+#     # 帧长
+#     wlen = 25
+#     # 帧移
+#     inc = 10
+#     # 重叠部分
+#     overlap = wlen - inc
+#     # 算出frame的个数
+#     signal_length = len(wavedata)
+#     if signal_length <= wlen:  # 若信号长度小于一个帧的长度，则帧数定义为1
+#         nf = 1
+#     else:  # 否则，计算帧的总长度
+#         nf = int(np.ceil((1.0 * signal_length - wlen + inc) / inc))
+#     # 所有帧加起来总的铺平后的长度
+#     pad_length = int((nf - 1) * inc + wlen)
+#     # 不够的长度使用0填补，类似于FFT中的扩充数组操作
+#     zeros = np.zeros((pad_length - signal_length,))
+#     # 填补后的信号记为pad_signal
+#     pad_signal = np.concatenate((wavedata, zeros))
+#     # 相当于对所有帧的时间点进行抽取，得到nf*wlen长度的矩阵
+#     indices = np.tile(np.arange(0, wlen), (nf, 1)) + np.tile(np.arange(0, nf * inc, inc), (wlen, 1)).T
+#     print(indices)
 
 if __name__ == '__main__':
     main()
