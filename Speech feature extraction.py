@@ -144,7 +144,7 @@ def all_frames_fft(frames_afterwindows, num, f):
     normalization_half_frames_afterabs = normalization_frames_afterabs[:, range(int(num / 2))]  # 由于对称性，只取一半区间（单边频谱）。根据Nyquist定理，超过采样率一半的信号会出现混叠
     # print(len(normalization_half_frames_afterabs))
     # 取每一帧的能量和的10倍log(最后mfcc特征，添加到十二维的最后一维变为十三维)
-    frames_afterfft_linshi = np.where(frames_afterfft == 0, np.finfo(float).eps, frames_afterfft)
+    frames_afterfft_linshi = np.where(normalization_half_frames_afterabs == 0, np.finfo(float).eps, normalization_half_frames_afterabs)
     energy_13 = 10*np.log10(frames_afterfft_linshi.sum(axis=1))
     # print('energy_13!!!!')
     # print(energy_13.shape)
@@ -157,9 +157,9 @@ def melfilter(half_frames_afterabs, nf, f):
     # 滤波器个数
     nfilt = 26
     low_freq_mel = 0
-    high_freq_mel = (2595 * np.log10(1 + (f / 2) / 700))  # 把 Hz 变成 Mel
+    high_freq_mel = (1127 * np.log(1 + (f / 2) / 700))  # 把 Hz 变成 Mel
     mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # 将梅尔刻度等间隔
-    hz_points = (700 * (10 ** (mel_points / 2595) - 1))  # 把 Mel 变成 Hz
+    hz_points = (700 * (np.e ** (mel_points / 1127) - 1))  # 把 Mel 变成 Hz
     # 每一个滤波器的中间值bin
     bin = np.floor((nf + 1) * hz_points / f)
     # 每一个半能量谱的滤波器
@@ -183,7 +183,9 @@ def melfilter(half_frames_afterabs, nf, f):
     # 进行log处理
     melscale_power_spectrum = 10 * np.log10(melscale_power_spectrum)  # dB
     # print(filter_banks)
-    # melscale_power_spectrum -= (np.mean(melscale_power_spectrum, axis=0) + 1e-8)
+    timely_T = melscale_power_spectrum.T
+    timely_T -= (np.mean(timely_T, axis=0) + 1e-8)
+    melscale_power_spectrum = timely_T.T
     # print(filter_banks)
     return melscale_power_spectrum, nfilt
 
@@ -237,7 +239,7 @@ def order_difference(melframes_afteridct, dim_of_feature, times_of_order, energy
 
 def main():
     """读取数据"""
-    num_of_testframe = 30
+    num_of_testframe = 14
     # 双声道数据，有数据的时间点，取样频率，取样个数
     wave_data, timelist, f, sum = read_voice_signal()
     # print(f)
@@ -285,8 +287,9 @@ def main():
     times_of_order = 2
     # 最后返回按列排的特征，及其维数
     final_mfcc_feature, dim_of_final_feature = order_difference(melframes_afteridct, dim_of_feature, times_of_order, energy_13)
-    # print(final_mfcc_feature[:, 13])
+    print(final_mfcc_feature[:, 13])
     # print(final_mfcc_feature.shape)
+    image_display(final_mfcc_feature[:, 13], np.arange(0, 39), "mfcc")
 
 
 if __name__ == '__main__':

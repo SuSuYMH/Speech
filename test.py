@@ -16,9 +16,9 @@ def main():
     # fbank = np.zeros((24, int(np.floor(149 / 2 + 1))))
     # print(fbank.shape)
 
-    wavedata = np.array([[1, 2, 3, 4],[2, 2, 2, 2]])
-    print(wavedata)
-    print(wavedata.sum(axis = 1))
+    wavedata = np.array([[1, 2, 3, 4],[2, 3, 4, 5]])
+    print(np.mean(wavedata,axis=0))
+    # print(wavedata.sum(axis = 1))
     # num = wavedata[0].sum
     # print(num)
     # print(range(int(10 / 2)))
